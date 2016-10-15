@@ -343,9 +343,13 @@ omega = 4
 
 lbalance, rbalance :: Key -> Prio -> a -> LTree a -> Key -> LTree a -> LTree a
 
+-- 左侧平衡
 lbalance k p v l m r
+    -- 两侧树高之和小于2，直接放入
     | size' l + size' r < 2     = lloser        k p v l m r
+    -- 右侧树太高了，向左侧旋转树
     | size' r > omega * size' l = lbalanceLeft  k p v l m r
+    -- 左侧树太高了，向右侧旋转树
     | size' l > omega * size' r = lbalanceRight k p v l m r
     | otherwise                 = lloser        k p v l m r
 
@@ -357,6 +361,8 @@ rbalance k p v l m r
 
 lbalanceLeft :: Key -> Prio -> a -> LTree a -> Key -> LTree a -> LTree a
 lbalanceLeft  k p v l m r
+    -- 比较右侧树的的平衡度
+    -- 如果右侧树的左子树 小于 右子树，进行单次左侧旋转，否则进行两次左侧旋转
     | size' (left r) < size' (right r) = lsingleLeft  k p v l m r
     | otherwise                        = ldoubleLeft  k p v l m r
 
@@ -374,11 +380,12 @@ rbalanceRight :: Key -> Prio -> a -> LTree a -> Key -> LTree a -> LTree a
 rbalanceRight k p v l m r
     | size' (left l) > size' (right l) = rsingleRight k p v l m r
     | otherwise                        = rdoubleRight k p v l m r
-
+-- 单次左旋，右侧的树是个左侧败者树的情况
 lsingleLeft :: Key -> Prio -> a -> LTree a -> Key -> LTree a -> LTree a
 lsingleLeft k1 p1 v1 t1 m1 (LLoser _ (E k2 p2 v2) t2 m2 t3)
     | p1 <= p2  = lloser k1 p1 v1 (rloser k2 p2 v2 t1 m1 t2) m2 t3
     | otherwise = lloser k2 p2 v2 (lloser k1 p1 v1 t1 m1 t2) m2 t3
+-- 单次左旋，右侧的树是个右侧败者树的情况    
 lsingleLeft k1 p1 v1 t1 m1 (RLoser _ (E k2 p2 v2) t2 m2 t3) =
     rloser k2 p2 v2 (lloser k1 p1 v1 t1 m1 t2) m2 t3
 lsingleLeft _ _ _ _ _ _ = moduleError "lsingleLeft" "malformed tree"
