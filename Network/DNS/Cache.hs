@@ -136,6 +136,7 @@ resolve _     dom
   | isIPAddr dom            = return $ Right $ Numeric $ tov4 dom
   where
     tov4 = toHostAddress . read . BS.unpack
+    
 resolve cache dom = do
     (key,mx) <- lookupPSQ cache dom
     case mx of
@@ -245,6 +246,7 @@ resolv _ resolvers dom = do
 -- > wait cache (< maxCon)
 --
 -- where 'maxCon' represents 'maxConcurrency' in 'DNSCacheConf'.
+-- 等待缓存更新
 wait :: DNSCache -> (Int -> Bool) -> IO ()
 wait cache cond = S.wait lvar cond
   where

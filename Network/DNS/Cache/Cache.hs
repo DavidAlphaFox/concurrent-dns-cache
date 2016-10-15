@@ -17,7 +17,7 @@ import Data.IORef (newIORef, readIORef, atomicModifyIORef', IORef)
 import Network.DNS.Cache.PSQ (PSQ)
 import qualified Network.DNS.Cache.PSQ as PSQ
 import Network.DNS.Cache.Types
-
+-- 定义全新的类型CacheRef
 newtype CacheRef = CacheRef (IORef (PSQ Entry))
 
 newCacheRef :: IO CacheRef
