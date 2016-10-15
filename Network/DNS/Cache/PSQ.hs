@@ -50,6 +50,7 @@
 -- Queues/, ICFP 2001, pp. 110-121
 --
 -- <http://citeseer.ist.psu.edu/hinze01simple.html>
+-- 带有加权的搜索队列
 module Network.DNS.Cache.PSQ
     (
     -- * Binding Type
@@ -92,6 +93,7 @@ module Network.DNS.Cache.PSQ
 import Network.DNS.Cache.Types
 import Prelude hiding (lookup, null)
 
+-- 定义存储的数据类型
 -- | @E k p@ binds the key @k@ with the priority @p@.
 data Elem a = E
     { key   :: {-# UNPACK #-} !Key
@@ -101,7 +103,7 @@ data Elem a = E
 
 ------------------------------------------------------------------------
 -- | A mapping from keys @k@ to priorites @p@.
-
+-- 定义搜索队列
 data PSQ a = Void
            | Winner {-# UNPACK #-} !(Elem a)
                     !(LTree a)
@@ -148,14 +150,27 @@ singleton k p v = Winner (E k p v) Start k
 -- and value are replaced with the supplied priority and value.
 insert :: Key -> Prio -> a -> PSQ a -> PSQ a
 insert k p v q = case q of
+    -- 如果是空的情况下，创建一个只有一个元素的队列
     Void -> singleton k p v
+    -- 只有一个元素的时候
+    -- 先比较原有的key和当前的key
     Winner (E k' p' v') Start _ -> case compare k k' of
+        -- 新的key比较小，那么将新的key放在play的前面
         LT -> singleton k  p  v  `play` singleton k' p' v'
+        -- 如果相同的话，那就更新当前值和优先级
         EQ -> singleton k  p  v
+        -- 新的key比较大，那么将老的key放在play前面
         GT -> singleton k' p' v' `play` singleton k  p  v
+    -- 右侧败者树    
     Winner e (RLoser _ e' tl m tr) m'
+        -- 比较k和右侧败者树的分界key
+        -- 如果k小于分界key
+        -- 那么将k插入到败者树的左侧，并且和败者树的首个元素比较
+        -- 如果k大于分界key
+        -- 那么将k插入到败者树的右侧，并且和当前首个元素比较
         | k <= m    -> insert k p v (Winner e tl m) `play` (Winner e' tr m')
         | otherwise -> (Winner e tl m) `play` insert k p v (Winner e' tr m')
+    -- 左侧败者树    
     Winner e (LLoser _ e' tl m tr) m'
         | k <= m    -> insert k p v (Winner e' tl m) `play` (Winner e tr m')
         | otherwise -> (Winner e' tl m) `play` insert k p v (Winner e tr m')
@@ -281,6 +296,7 @@ atMosts !pt q = case q of
 -- Loser tree
 
 type Size = Int
+-- 败者树定义
 
 data LTree a = Start
              | LLoser {-# UNPACK #-} !Size
@@ -424,6 +440,9 @@ play :: PSQ a -> PSQ a -> PSQ a
 Void `play` t' = t'
 t `play` Void  = t
 Winner e@(E k p v) t m `play` Winner e'@(E k' p' v') t' m'
+    -- 比较优先级
+    -- 如果前者优先级没有后者大的时候，将后者放在前者的右侧
+    -- 如果前者优先级比后者大的时候，将前者放在后者的左侧
     | p <= p'   = Winner e (rbalance k' p' v' t m t') m'
     | otherwise = Winner e' (lbalance k p v t m t') m'
 {-# INLINE play #-}

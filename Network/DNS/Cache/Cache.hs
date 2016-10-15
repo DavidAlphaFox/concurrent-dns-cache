@@ -20,6 +20,7 @@ import Network.DNS.Cache.Types
 -- 定义全新的类型CacheRef
 newtype CacheRef = CacheRef (IORef (PSQ Entry))
 
+-- 创建IORef的类型
 newCacheRef :: IO CacheRef
 newCacheRef = CacheRef <$> newIORef PSQ.empty
 
