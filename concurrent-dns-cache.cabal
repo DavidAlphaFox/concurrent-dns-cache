@@ -1,5 +1,5 @@
 Name:                   concurrent-dns-cache
-Version:                0.0.1
+Version:                0.1.0
 Author:                 Kazu Yamamoto <kazu@iij.ad.jp>
 Maintainer:             Kazu Yamamoto <kazu@iij.ad.jp>
 License:                BSD3
@@ -15,7 +15,6 @@ Library
   GHC-Options:          -Wall
   Exposed-Modules:      Network.DNS.Cache
   Other-Modules:        Network.DNS.Cache.Cache
-                        Network.DNS.Cache.PSQ
                         Network.DNS.Cache.Sync
                         Network.DNS.Cache.Types
                         Network.DNS.Cache.Utils
@@ -26,11 +25,14 @@ Library
                       , bytestring >= 0.10.4.0
                       , containers
                       , dns
-                      , hashable
                       , iproute
+                      , lifted-base
+                      , monad-control
                       , network
+                      , psqueues >= 0.2.3
                       , stm
                       , time
+                      , transformers
 
 Executable main
   Main-Is:              main.hs
@@ -42,11 +44,14 @@ Executable main
                       , bytestring >= 0.10.4.0
                       , containers
                       , dns
-                      , hashable
                       , iproute
+                      , lifted-base
+                      , monad-control
                       , network
+                      , psqueues
                       , stm
                       , time
+                      , transformers
 
 Test-Suite spec
   Main-Is:              Spec.hs
