@@ -141,10 +141,12 @@ resolve _     dom
   | isIPAddr dom            = return $ Right $ Numeric $ tov4 dom
   where
     tov4 = toHostAddress . read . BS.unpack
-    
+
 resolve cache dom = do
+  -- 检查Cache中是否已经存在
     (key,mx) <- lookupPSQ cache dom
     case mx of
+        -- 存在直接返回
         Just (_,ev) -> case ev of
             Left  e -> Left <$> return e
             Right v -> Right . Hit <$> rotate v
@@ -162,10 +164,13 @@ resolve cache dom = do
                         Left  err   -> insertNegative cache key err
                         Right []    -> insertNegative cache key UnexpectedRDATA
                         Right addrs -> insertPositive cache key addrs
+                    -- 得到结果后立刻更新出活动的查询
                     S.deleteActiveRef key activeref
+                    -- 通知所有等待的线程
                     S.tell avar (toHit res)
                     return res
   where
+    -- 从cache中拿出活动的查询
     activeref = cacheActiveRef cache
     toHit (Right (Resolved addr)) = Right (Hit addr)
     toHit x                       = x
@@ -195,10 +200,13 @@ insertNegative cache key err = do
 
 ----------------------------------------------------------------
 
+-- 限制并发
 sendQuery :: DNSCache -> Domain -> IO (Either DNSError [(HostAddress,TTL)])
 sendQuery cache dom = bracket setup teardown body
   where
+    -- 发送前先进行CondVar的增加
     setup = waitIncrease cache
+    -- 结束的时候减少数量
     teardown _ = decrease cache
     body _ = concResolv cache dom
 
@@ -233,6 +241,7 @@ resolv :: Int -> [Resolver] -> Domain -> IO (Either DNSError DNSFormat)
 resolv 1 resolvers dom = lookupRaw (head resolvers) dom A
 resolv _ resolvers dom = do
     asyncs <- mapM async actions
+    -- 并发解析，任何一个返回结果立刻停止解析
     snd <$> waitAnyCancel asyncs
   where
     actions = map (\res -> lookupRaw res dom A) resolvers

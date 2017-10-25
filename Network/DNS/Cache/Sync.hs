@@ -47,7 +47,7 @@ waitIncrease (ConcVar var) lim = atomically $ do
     x <- readTVar var
     -- 如果x是小于限制lim的时候
     check (x < lim)
-    -- 使用Bang patterns 
+    -- 使用Bang patterns
     -- 立刻进行计算
     let !x' = x + 1
     -- 写入Tvar
@@ -67,6 +67,7 @@ newActiveVar = ActiveVar <$> newEmptyTMVarIO
 tell :: ActiveVar -> Either DNSError Result -> IO ()
 tell (ActiveVar var) r = atomically $ putTMVar var r
 
+-- 每次拿出来再放回去
 listen :: ActiveVar -> IO (Either DNSError Result)
 listen (ActiveVar var) = atomically $ readTMVar var
 
